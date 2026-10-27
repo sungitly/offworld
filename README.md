@@ -29,9 +29,9 @@ PPTX 先通过 LibreOffice 渲染 PDF，再用 Poppler 生成 JPG；会核对原
 ## R2 视频
 
 1. 注册 [Cloudflare](https://dash.cloudflare.com/)，在 Storage & databases → R2 → Overview 开通 R2。
-2. 创建 `offworld-media` bucket，绑定媒体自定义域名；公开域名意味着 bucket 内对象可以公开访问。生产环境不用 `r2.dev`。
-3. 创建仅可读写此 bucket 的 R2 S3 API 凭证，在本机设置 `.env.example` 中的环境变量。不要把 Secret 发到聊天或提交到 Git。脚本不会自动加载 `.env`，请通过终端 `export` 设置。
-4. 在 `artifact.config.json` 填写 `r2Bucket` 和 `mediaBaseUrl`，例如 `https://media.example.com`。
+2. 创建 `offworld` bucket。暂时没有域名时，可启用 Public Development URL 并使用 `https://pub-….r2.dev` 做开发测试；该入口有限流，正式发布时绑定媒体自定义域名。开启公开访问后，bucket 内对象可公开读取。
+3. 创建仅可读写此 bucket 的 R2 S3 API 凭证，在本机设置 `.env.example` 中的环境变量。不要把 Secret 发到聊天或提交到 Git。可把这三项配置填写到本机 `.env`，上传时脚本自动读取；终端已导出的变量优先。
+4. 在 `artifact.config.json` 填写 `r2Bucket` 和 `mediaBaseUrl`；测试时使用控制台的 `https://pub-….r2.dev`，正式发布使用 `https://media.example.com` 等自定义域名。
 5. 创建本地 Python 环境并安装可选依赖，再预览上传计划：
 
 ```sh

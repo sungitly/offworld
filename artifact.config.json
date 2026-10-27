@@ -3,6 +3,6 @@
   "visibility": "public",
   "imageWidth": 1920,
   "jpegQuality": 90,
-  "r2Bucket": "offworld-media",
-  "mediaBaseUrl": ""
+  "r2Bucket": "offworld",
+  "mediaBaseUrl": "https://pub-e37f36c2fbe94523ae1afaebeaa70d3a.r2.dev"
 }

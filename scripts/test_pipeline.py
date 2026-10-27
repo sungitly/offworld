@@ -1,10 +1,12 @@
 """Regression checks for original-file isolation and private build defaults."""
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 import process
+import upload_videos
 
 
 class PipelineTests(unittest.TestCase):
@@ -72,6 +74,19 @@ class PipelineTests(unittest.TestCase):
         source.write_text('<img src="image.jpg">')
         with self.assertRaisesRegex(ValueError, 'local dependencies'):
             process.import_html(source)
+
+
+class UploadEnvTests(unittest.TestCase):
+    def test_local_credentials_load_without_overwriting_exported_values(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / '.env').write_text("R2_ACCOUNT_ID=example-account\nexport AWS_ACCESS_KEY_ID='local-key'\nAWS_SECRET_ACCESS_KEY=example-secret # comment\nUNRELATED=ignored\n")
+            with patch.object(upload_videos, 'ROOT', root), patch.dict(os.environ, {'AWS_ACCESS_KEY_ID': 'exported-key'}, clear=True):
+                upload_videos.load_local_env()
+                self.assertEqual(os.environ['R2_ACCOUNT_ID'], 'example-account')
+                self.assertEqual(os.environ['AWS_ACCESS_KEY_ID'], 'exported-key')
+                self.assertEqual(os.environ['AWS_SECRET_ACCESS_KEY'], 'example-secret')
+                self.assertNotIn('UNRELATED', os.environ)
 
 
 if __name__ == '__main__':

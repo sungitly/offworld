@@ -3,9 +3,35 @@
 import argparse
 import json
 import os
+import shlex
 from pathlib import Path
 from urllib.parse import quote, urlparse
 from process import ROOT, CONFIG, catalog, digest, run, slug, write_json
+
+
+def load_local_env():
+    """Load only R2 upload variables; never execute shell code or replace exported values."""
+    env_file = ROOT / '.env'
+    if not env_file.is_file():
+        return
+    allowed = {'R2_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY'}
+    for number, line in enumerate(env_file.read_text().splitlines(), 1):
+        line = line.strip()
+        if line.startswith('export '):
+            line = line[7:].lstrip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        key = key.strip()
+        if key not in allowed:
+            continue
+        try:
+            tokens = shlex.split(value, comments=True)
+        except ValueError:
+            raise ValueError(f'Invalid .env syntax on line {number}') from None
+        if len(tokens) != 1:
+            raise ValueError(f'Missing or invalid .env value on line {number}')
+        os.environ.setdefault(key, tokens[0])
 
 
 def main():
@@ -28,12 +54,13 @@ def main():
     if not args.execute:
         print('Plan only. No network requests or uploads. Add --execute after configuring R2.')
         return
+    load_local_env()
     needed = ('R2_ACCOUNT_ID', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY')
     if any(not os.environ.get(name) for name in needed):
         parser.error('Set R2_ACCOUNT_ID, AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in your environment')
     base = CONFIG.get('mediaBaseUrl', '').rstrip('/')
     if CONFIG['visibility'] == 'public' and (urlparse(base).scheme != 'https' or not urlparse(base).netloc):
-        parser.error('Set mediaBaseUrl to your public R2 custom domain (https://...)')
+        parser.error('Set mediaBaseUrl to your public R2 URL (https://...)')
     if CONFIG['visibility'] != 'public' and base:
         parser.error('Private repositories must keep mediaBaseUrl empty')
     try:
