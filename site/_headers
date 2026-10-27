@@ -1,0 +1,9 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/assets/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/artifacts.json
+  Cache-Control: public, max-age=0, must-revalidate

@@ -1,0 +1,22 @@
+/* Hallmark · macrostructure: Portfolio Grid · theme: Midnight · nav: N9 · footer: Ft2 */
+@font-face{font-family:"Space Grotesk";src:url("./fonts/SpaceGrotesk.ttf") format("truetype");font-style:normal;font-weight:300 700;font-display:swap}
+:root{
+  color-scheme:dark;
+  --color-paper:oklch(20.5% .007 125);
+  --color-paper-2:oklch(24% .008 125);
+  --color-paper-3:oklch(28% .009 125);
+  --color-ink:oklch(94% .012 88);
+  --color-muted:oklch(72% .013 88);
+  --color-line:oklch(36% .009 110);
+  --color-accent:oklch(79% .13 67);
+  --color-accent-ink:oklch(19% .02 67);
+  --color-focus:oklch(91% .1 88);
+  --color-overlay:oklch(8% .005 110 / .85);
+  --color-overlay-soft:oklch(8% .005 110 / .6);
+  --color-transparent:transparent;
+  --font-display:"Space Grotesk","PingFang SC","Microsoft YaHei",sans-serif;
+  --font-body:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  --space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;--space-2xl:48px;--space-3xl:64px;
+  --page-gutter:clamp(20px,5vw,80px);
+  --ease-out:cubic-bezier(.22,1,.36,1);
+}

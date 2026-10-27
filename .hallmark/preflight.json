@@ -1,0 +1,1 @@
+{"framework":"vanilla HTML + Python static build","existingStyles":"Standalone dark slide viewer only; no homepage system","motion":"cut","scope":"offworld homepage","preserve":["existing slide viewers","artifact manifest","R2 video URLs"],"introduce":["Midnight gallery tokens","responsive Portfolio Grid","native video dialog"]}

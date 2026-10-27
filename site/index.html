@@ -1,0 +1,55 @@
+<!doctype html>
+<!-- Hallmark · pre-emit critique: P4 H5 E4 S5 R5 V4
+     Portfolio Grid · Midnight · N9 · Ft2
+     Context: personal collection; existing covers are the artwork.
+     No runtime framework, external fonts, analytics, or build-time credentials. -->
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#171815">
+  <meta name="description" content="offworld，Lei Sun 的个人作品收藏。关于 AI、业务与生活的幻灯片、视频和网页实验。">
+  <meta property="og:title" content="offworld — 想法，总要做出来。">
+  <meta property="og:description" content="一些幻灯片，一些影像，还有不定期出现的网页实验。">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="zh_CN">
+  <title>offworld — 想法，总要做出来。</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/tokens.css">
+  <link rel="stylesheet" href="/assets/gallery.css">
+  <script src="/assets/gallery.js" defer></script>
+</head>
+<body id="top">
+  <a class="skip-link" href="#works">跳到作品</a>
+  <div class="page-shell">
+    <header class="masthead">
+      <a class="wordmark" href="/" aria-label="offworld 首页">offworld<span class="brand-orbit" aria-hidden="true"></span></a>
+      <a class="external-link" href="https://github.com/sungitly/offworld" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span><span class="sr-only">（新窗口）</span></a>
+    </header>
+    <main>
+      <section class="introduction" aria-labelledby="intro-title">
+        <h1 id="intro-title">想法，总要<br>做出来<span class="accent">。</span></h1>
+        <div class="intro-note">
+          <p>一些幻灯片，一些影像，<br>还有不定期出现的网页实验。</p>
+          <p class="byline">Made along the way. <span>by Lei Sun</span></p>
+        </div>
+      </section>
+      <section id="works" class="collection" aria-labelledby="collection-title">
+        <div class="collection-toolbar">
+          <div class="collection-heading"><h2 id="collection-title">作品收藏</h2><span class="total-count">__WORK_COUNT__ 件</span></div>
+          <div class="filters" role="group" aria-label="按作品类型筛选" hidden>__FILTERS__</div>
+        </div>
+        <p id="filter-status" class="sr-only" role="status" aria-live="polite"></p>
+        <div class="work-grid" id="work-grid">__ARTIFACT_CARDS__</div>
+        <div id="empty-state" class="empty-state" hidden><p>这个分类里还没有作品。</p><button id="reset-filter" class="text-button" type="button">查看全部作品 <span aria-hidden="true">↗</span></button></div>
+      </section>
+    </main>
+    <footer class="colophon"><p>offworld <span aria-hidden="true">/</span> 想法的存放地</p><p>Made by Lei Sun<span class="footer-dot" aria-hidden="true">·</span><a href="#top" id="back-top">回到顶部 ↑</a></p></footer>
+  </div>
+  <dialog id="video-dialog" aria-labelledby="video-title">
+    <div class="player-heading"><div><span class="player-kind">VIDEO</span><h2 id="video-title">视频播放</h2></div><button id="close-video" class="close-button" type="button" aria-label="关闭视频">✕</button></div>
+    <div class="player-stage"><video id="video-player" controls playsinline preload="none" tabindex="0"></video></div>
+    <div class="player-footer"><p id="video-status" role="status" aria-live="polite"></p><a id="video-direct" class="external-link" target="_blank" rel="noopener noreferrer">单独打开 <span aria-hidden="true">↗</span><span class="sr-only">（新窗口）</span></a></div>
+  </dialog>
+</body>
+</html>

@@ -13,6 +13,7 @@ import sys
 import tempfile
 import unicodedata
 import zipfile
+from gallery import render_homepage
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = json.loads((ROOT / 'artifact.config.json').read_text())
@@ -219,6 +220,10 @@ def build(allow_private=False):
             if (ROOT / category).exists():
                 shutil.copytree(ROOT / category, staged / category, symlinks=True, ignore=shutil.ignore_patterns('.gitkeep'))
         shutil.copy2(ROOT / 'artifacts.json', staged / 'artifacts.json')
+        if (ROOT / 'site').exists():
+            shutil.copytree(ROOT / 'site', staged, dirs_exist_ok=True, symlinks=True,
+                ignore=shutil.ignore_patterns('content.json', '_d_meta.json'))
+        has_homepage = render_homepage(ROOT, staged, items)
         forbidden = {'.pptx', '.pdf', '.mp4', '.mov', '.mkv', '.webm', '.py'}
         for path in staged.rglob('*'):
             if path.is_symlink() or path.suffix.lower() in forbidden or any(p.startswith('.') for p in path.relative_to(staged).parts):
@@ -226,7 +231,7 @@ def build(allow_private=False):
             if path.is_file() and path.stat().st_size > 25 * 1024 * 1024:
                 raise ValueError(f'Pages asset exceeds 25 MiB: {path}')
         replace_dir(staged, ROOT / 'dist')
-    print(f'Built dist/: {len(items)} artifacts. No homepage yet.')
+    print(f'Built dist/: {len(items)} artifacts. Homepage: {"ready" if has_homepage else "not configured"}.')
 
 
 if __name__ == '__main__':

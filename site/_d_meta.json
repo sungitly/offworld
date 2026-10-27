@@ -1,0 +1,18 @@
+{
+  "type": "design",
+  "designSystems": [],
+  "primaryDesignSystem": null,
+  "assets": {
+    "offworld gallery": {
+      "versions": [
+        {
+          "path": "index.html",
+          "createdAt": "2026-10-27T14:37:21.783Z",
+          "status": "needs-review"
+        }
+      ]
+    }
+  },
+  "createdAt": "2026-10-27T14:37:21.784Z",
+  "updatedAt": "2026-10-27T14:42:01.725Z"
+}

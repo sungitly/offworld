@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 import process
 import upload_videos
+from gallery import render_homepage
 
 
 class PipelineTests(unittest.TestCase):
@@ -74,6 +75,52 @@ class PipelineTests(unittest.TestCase):
         source.write_text('<img src="image.jpg">')
         with self.assertRaisesRegex(ValueError, 'local dependencies'):
             process.import_html(source)
+
+    def test_homepage_build_includes_assets_and_excludes_editorial_inputs(self):
+        site = self.root / 'site'
+        (site / 'assets').mkdir(parents=True)
+        (site / 'index.html').write_text('<main>__WORK_COUNT____FILTERS____ARTIFACT_CARDS__</main>')
+        (site / 'assets/app.js').write_text('void 0')
+        (site / 'content.json').write_text('{}')
+        (site / '_d_meta.json').write_text('{}')
+        process.build()
+        self.assertTrue((self.root / 'dist/assets/app.js').exists())
+        output = (self.root / 'dist/index.html').read_text()
+        self.assertNotIn('__ARTIFACT_CARDS__', output)
+        self.assertFalse((self.root / 'dist/content.json').exists())
+        self.assertFalse((self.root / 'dist/_d_meta.json').exists())
+
+    def test_homepage_escapes_titles_and_encodes_local_paths(self):
+        (self.root / 'site').mkdir()
+        (self.root / 'site/index.html').write_text('__ARTIFACT_CARDS__')
+        item = {'id': 'test', 'type': 'slides', 'title': '<script>bad</script>',
+                'path': 'slides/中文/index.html', 'cover': 'slides/中文/001.jpg', 'pages': 2}
+        render_homepage(self.root, self.root, [item])
+        output = (self.root / 'index.html').read_text()
+        self.assertNotIn('<script>', output)
+        self.assertIn('&lt;script&gt;', output)
+        self.assertIn('/slides/%E4%B8%AD%E6%96%87/index.html', output)
+
+    def test_homepage_rejects_paths_outside_artifacts_and_non_https_video(self):
+        (self.root / 'site').mkdir()
+        (self.root / 'site/index.html').write_text('__ARTIFACT_CARDS__')
+        item = {'id': 'test', 'type': 'slides', 'title': 'Test',
+                'path': 'slides/../../.env', 'pages': 2}
+        with self.assertRaises(ValueError):
+            render_homepage(self.root, self.root, [item])
+        item = {'id': 'test', 'type': 'video', 'title': 'Test',
+                'url': 'javascript:alert(1)', 'status': 'uploaded'}
+        with self.assertRaises(ValueError):
+            render_homepage(self.root, self.root, [item])
+
+    def test_unpublished_video_has_no_play_link(self):
+        (self.root / 'site').mkdir()
+        (self.root / 'site/index.html').write_text('__ARTIFACT_CARDS__')
+        item = {'id': 'test', 'type': 'video', 'title': 'Test', 'status': 'pending-upload'}
+        render_homepage(self.root, self.root, [item])
+        output = (self.root / 'index.html').read_text()
+        self.assertNotIn('data-video', output)
+        self.assertIn('待上传', output)
 
 
 class UploadEnvTests(unittest.TestCase):
