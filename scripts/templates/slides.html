@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#111;color:#eee}
+*{box-sizing:border-box}body{margin:0}main{height:100dvh;display:grid;grid-template-rows:minmax(0,1fr) auto}
+.stage{display:flex;align-items:center;justify-content:center;min-height:0;padding:12px}
+img{display:block;max-width:100%;max-height:100%;object-fit:contain}
+footer{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 20px;background:#1c1c1c;flex-wrap:wrap}
+h1{font-size:14px;font-weight:500;margin:0;overflow-wrap:anywhere}nav{display:flex;align-items:center;gap:8px}
+button,input{font:inherit;color:inherit;background:#303030;border:1px solid #666;border-radius:5px;min-height:44px}
+button{padding:8px 14px;cursor:pointer}button:disabled{opacity:.4;cursor:default}input{width:64px;text-align:center}
+:focus-visible{outline:3px solid #85bdff;outline-offset:3px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+@media(max-width:600px){footer{padding:8px;gap:8px}h1{width:100%;font-size:12px}nav{width:100%;justify-content:center}.stage{padding:0}button{padding:8px 10px}}
+@media print{main{height:auto}.stage{display:none}footer{display:none}.print-slide{display:block;width:100%;page-break-after:always}}
+@media screen{.print-slide{display:none}}
+</style>
+<main>
+ <div class="stage" aria-label="幻灯片"><img id="slide" src="images/001.jpg" alt="第 1 页"></div>
+ <footer><h1>__TITLE__</h1><nav aria-label="翻页">
+  <button id="prev" type="button" aria-label="上一页">←</button>
+  <label class="sr-only" for="page">跳转页码</label><input id="page" type="number" min="1" max="__COUNT__" value="1">
+  <span aria-hidden="true">/ __COUNT__</span><span id="status" class="sr-only" aria-live="polite"></span>
+  <button id="next" type="button" aria-label="下一页">→</button><button id="full" type="button">全屏</button>
+ </nav></footer>
+</main>
+<noscript><p>启用 JavaScript 后可翻页。以下为所有页面：</p>__NOSCRIPT__</noscript>
+<script>
+const count=__COUNT__, image=document.querySelector('#slide'), input=document.querySelector('#page');
+let current=1;
+function show(n,updateHash=true){
+ current=Math.min(count,Math.max(1,Number.isFinite(n)?Math.trunc(n):1));
+ image.src=`images/${String(current).padStart(3,'0')}.jpg`;image.alt=`第 ${current} 页，共 ${count} 页`;
+ input.value=current;document.querySelector('#prev').disabled=current===1;document.querySelector('#next').disabled=current===count;
+ document.querySelector('#status').textContent=image.alt;
+ if(updateHash)history.replaceState(null,'',`#${current}`);
+ if(current<count){const preload=new Image();preload.src=`images/${String(current+1).padStart(3,'0')}.jpg`}
+}
+document.querySelector('#prev').onclick=()=>show(current-1);
+document.querySelector('#next').onclick=()=>show(current+1);
+input.onchange=()=>show(Number(input.value));
+document.addEventListener('keydown',e=>{
+ if(e.target.closest('input,textarea,select,button')||e.ctrlKey||e.metaKey||e.altKey)return;
+ const actions={ArrowRight:current+1,ArrowDown:current+1,PageDown:current+1,' ':current+1,ArrowLeft:current-1,ArrowUp:current-1,PageUp:current-1,Home:1,End:count};
+ if(e.key in actions){e.preventDefault();show(actions[e.key])}
+});
+const full=document.querySelector('#full');
+if(!document.fullscreenEnabled)full.hidden=true;
+full.onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{document.querySelector('#status').textContent='浏览器未允许全屏'}};
+document.addEventListener('fullscreenchange',()=>full.textContent=document.fullscreenElement?'退出全屏':'全屏');
+let startX=0,startY=0;
+image.addEventListener('touchstart',e=>{if(e.touches.length===1){startX=e.touches[0].clientX;startY=e.touches[0].clientY}},{passive:true});
+image.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*2)show(current+(dx<0?1:-1))},{passive:true});
+addEventListener('hashchange',()=>show(Number(location.hash.slice(1)),false));
+show(Number(location.hash.slice(1))||1,false);
+</script>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "offworld",
+  "visibility": "public",
+  "imageWidth": 1920,
+  "jpegQuality": 90,
+  "r2Bucket": "offworld-media",
+  "mediaBaseUrl": ""
+}

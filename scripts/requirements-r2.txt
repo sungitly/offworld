@@ -1,0 +1,2 @@
+# Optional; needed only for real R2 uploads, not conversion/build/preview.
+boto3>=1.35,<2

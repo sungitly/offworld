@@ -1,0 +1,44 @@
+{
+  "name": "offworld",
+  "visibility": "public",
+  "items": [
+    {
+      "id": "fde-用ai把业务重新做一遍-64aeb802",
+      "type": "slides",
+      "title": "FDE-用AI把业务重新做一遍",
+      "path": "slides/fde-用ai把业务重新做一遍-64aeb802/index.html",
+      "cover": "slides/fde-用ai把业务重新做一遍-64aeb802/images/001.jpg",
+      "pages": 10
+    },
+    {
+      "id": "winetalk_from_sweetness_to_time_v1-3f99ae95",
+      "type": "slides",
+      "title": "WineTalk_From_Sweetness_to_Time_V1",
+      "path": "slides/winetalk_from_sweetness_to_time_v1-3f99ae95/index.html",
+      "cover": "slides/winetalk_from_sweetness_to_time_v1-3f99ae95/images/001.jpg",
+      "pages": 7
+    },
+    {
+      "id": "slide1-ai坐标系-视频开场-v11-astra-66988801",
+      "type": "video",
+      "title": "Slide1-AI坐标系-视频开场-v11-Astra",
+      "cover": "videos/slide1-ai坐标系-视频开场-v11-astra-66988801/poster.jpg",
+      "duration": 86.0,
+      "width": 1920,
+      "height": 1080,
+      "objectKey": "videos/slide1-ai坐标系-视频开场-v11-astra-66988801/1d7ff532e364b672.mp4",
+      "status": "pending-upload"
+    },
+    {
+      "id": "slide1-ai坐标系-视频开场-v11-claude-43a6dccb",
+      "type": "video",
+      "title": "Slide1-AI坐标系-视频开场-v11-Claude",
+      "cover": "videos/slide1-ai坐标系-视频开场-v11-claude-43a6dccb/poster.jpg",
+      "duration": 84.0,
+      "width": 1920,
+      "height": 1080,
+      "objectKey": "videos/slide1-ai坐标系-视频开场-v11-claude-43a6dccb/8836c80a17901e99.mp4",
+      "status": "pending-upload"
+    }
+  ]
+}
