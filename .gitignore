@@ -16,3 +16,4 @@ __pycache__/
 *.pptx
 *.pdf
 /.playwright-cli/
+/.wrangler/

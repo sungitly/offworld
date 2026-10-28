@@ -73,34 +73,34 @@ git commit -m "Set up artifact processing and slide viewers"
 git push -u origin main
 ```
 
-`sources/`、视频、原始 PPTX、缓存、凭证和 `dist/` 均不提交。Pages 使用 `python3 scripts/process.py build` 构建、发布 `dist`；云端无需 LibreOffice，直接使用已经提交的 JPG。只在本地运行 `process`。云端构建不读取 `.env`，不需要 R2 上传凭证。
+`sources/`、视频、原始 PPTX、缓存、凭证和 `dist/` 均不提交。Workers Static Assets 使用 `python3 scripts/process.py build` 构建、发布 `dist`；云端无需 LibreOffice，直接使用已经提交的 JPG。只在本地运行 `process`。云端构建不读取 `.env`，不需要 R2 上传凭证。
 
 官方说明：[R2 开通](https://developers.cloudflare.com/r2/get-started/)、[公开域名](https://developers.cloudflare.com/r2/buckets/public-buckets/)、[R2 定价](https://developers.cloudflare.com/r2/pricing/)。
 
 脚本回归检查：`python3 -m unittest discover -s scripts -p "test_*.py"`。macOS 转换会自动加入系统 CJK 字体目录，字体缓存仅保存在本机 `.cache/`。
 
-## Cloudflare Pages 部署
+## Cloudflare Workers Static Assets 部署
 
-正式地址确定为 **https://offworld.sunlei.page/**。待配置就绪后手动发布，不安排定时部署。
+正式地址为 **https://offworld.sunlei.page/**，视频域名为 **https://media.sunlei.page**。使用 Workers Static Assets 发布纯静态网站，不需要编写 Worker 请求处理代码。仓库根目录的 `wrangler.json` 指定 `assets.directory` 为 `./dist`，并使用站内 `404.html` 处理不存在的页面。
 
-在 Cloudflare 控制台进入 Workers & Pages，创建 Pages 项目并连接 GitHub 仓库 `sungitly/offworld`。选择 Git 集成后填写：
+在 Cloudflare 的 Workers & Pages 创建应用，连接 GitHub 仓库 `sungitly/offworld`，填写：
 
 | 设置 | 值 |
 | --- | --- |
+| Project name / Worker name | `offworld` |
 | Production branch | `main` |
-| Framework preset | `None` |
-| Root directory | 仓库根目录，留空 |
+| Root directory | 仓库根目录，留空或 `/` |
 | Build command | `python3 scripts/process.py build` |
-| Build output directory | `dist` |
+| Deploy command | `npx wrangler deploy` |
 
-保存并部署后使用 Cloudflare 分配的 `*.pages.dev` 地址访问。以后推送到 `main` 会自动重新构建；这里只准备部署所需的源文件，尚未创建 Pages 项目。`site/_headers` 和 `site/404.html` 会随构建复制到发布根目录。
+Cloudflare 的 Git 集成负责部署身份授权，不能用本机 R2 的对象读写凭证替代部署凭证。R2 密钥不需要进入构建环境。推送到 `main` 后，已连接的 Cloudflare 项目会自动重新构建部署；以控制台部署日志为准。
 
-Pages 首次部署成功后，进入项目的 **Custom domains → Set up a domain**，填写 `offworld.sunlei.page` 并按控制台提示完成 DNS 关联。必须先在 Pages 中添加自定义域名，不能只手动添加 CNAME。若 `sunlei.page` 的 DNS 已由同一 Cloudflare 账号管理，可在确认后自动创建对应记录；若在其他 DNS 服务商管理，按控制台给出的目标配置 CNAME。等待域名状态和 HTTPS 证书生效，再验证首页、slides 和视频。
+部署成功后，在应用的 Domains / Settings → Domains & Routes 中绑定 `offworld.sunlei.page`，按控制台提示完成 DNS 与证书配置。如果域名已绑定到旧应用，需要先解除旧绑定；不要删除 R2 的 `media.sunlei.page` 绑定。静态资源、`_headers` 和 `404.html` 均从 `dist` 发布。
 
-R2 已绑定独立媒体子域名 `media.sunlei.page`；本地配置、视频元数据和首页使用新域名。
+如需继续用传统 Pages，仍可通过创建页面底部的 Continue to Pages 进入，构建命令相同，Build output directory 填 `dist`，不使用 Worker 的 Deploy command。本仓库默认按 Workers Static Assets 部署。
 
 首页在构建时读取清单，把所有作品输出为真实 HTML，浏览时无需请求清单 API；JavaScript 只增强类型筛选和视频弹窗。新增作品后运行处理与上传脚本，再运行 `build` 即可自动接入；已上传的视频链接不需要云端密钥。展示文案可在 `site/content.json` 中按作品 ID 覆盖，新作品没有覆盖时使用原始标题。
 
-旧 `r2.dev` 入口目前保留以兼容旧链接；确认不再需要后可在 R2 控制台关闭。不要把 R2 API 凭证填进 Pages 构建环境。
+旧 `r2.dev` 入口目前保留以兼容旧链接；确认不再需要后可在 R2 控制台关闭。不要把 R2 API 凭证填进 Cloudflare 构建环境。
 
-部署参考：[静态 HTML](https://developers.cloudflare.com/pages/framework-guides/deploy-anything/)、[构建配置](https://developers.cloudflare.com/pages/configuration/build-configuration/)、[自定义域名](https://developers.cloudflare.com/pages/configuration/custom-domains/)。
+部署参考：[Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)、[Wrangler 配置](https://developers.cloudflare.com/workers/wrangler/configuration/)、[自定义域名](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)。
