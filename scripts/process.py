@@ -14,6 +14,7 @@ import tempfile
 import unicodedata
 import zipfile
 from gallery import render_homepage
+from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = json.loads((ROOT / 'artifact.config.json').read_text())
@@ -55,6 +56,19 @@ def digest(path):
         for block in iter(lambda: f.read(1024 * 1024), b''):
             h.update(block)
     return h.hexdigest()
+
+
+def video_object_key(ident, checksum):
+    names = CONFIG.get('videoNames', {})
+    for name in names.values():
+        if not isinstance(name, str) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*', name) or len(name) > 80:
+            raise ValueError('Video names must be short lowercase English words or numbers joined by hyphens')
+    if len(set(names.values())) != len(names):
+        raise ValueError('videoNames must use a distinct name for each video')
+    if ident in names:
+        return f'videos/{names[ident]}.mp4'
+    # Preserve existing URLs until a readable name is explicitly assigned.
+    return f'videos/{ident}/{checksum[:16]}.mp4'
 
 
 def slug(path):
@@ -162,12 +176,17 @@ def video(source):
          '-frames:v', '1', '-vf', 'scale=1280:-2', '-update', '1', target / 'poster.jpg'])
     old = json.loads((target / 'metadata.json').read_text()) if (target / 'metadata.json').exists() else {}
     checksum = digest(source)
-    key = f'videos/{ident}/{checksum[:16]}.mp4'
+    key = video_object_key(ident, checksum)
     data = {'id': ident, 'type': 'video', 'title': source.stem, 'cover': f'videos/{ident}/poster.jpg',
             'duration': round(duration, 2), 'width': stream['width'], 'height': stream['height'],
-            'objectKey': key, 'status': 'pending-upload'}
-    if old.get('objectKey') == key and old.get('status') == 'uploaded':
-        data.update({k: old[k] for k in ('status', 'url') if k in old})
+            'objectKey': key, 'sourceSha256': checksum, 'status': 'pending-upload'}
+    previous_checksum = old.get('sourceSha256')
+    if not previous_checksum and old.get('objectKey') == f'videos/{ident}/{checksum[:16]}.mp4':
+        previous_checksum = checksum
+    if old.get('objectKey') == key and old.get('status') == 'uploaded' and previous_checksum == checksum:
+        data['status'] = 'uploaded'
+        if CONFIG['visibility'] == 'public' and CONFIG.get('mediaBaseUrl'):
+            data['url'] = CONFIG['mediaBaseUrl'].rstrip('/') + '/' + quote(key, safe='/')
     write_json(target / 'metadata.json', data)
     print(f'Video prepared: {source.name} ({duration:.1f}s)', flush=True)
 

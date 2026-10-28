@@ -6,7 +6,7 @@ import os
 import shlex
 from pathlib import Path
 from urllib.parse import quote, urlparse
-from process import ROOT, CONFIG, catalog, digest, run, slug, write_json
+from process import ROOT, CONFIG, catalog, digest, run, slug, write_json, video_object_key
 
 
 def load_local_env():
@@ -34,6 +34,19 @@ def load_local_env():
         os.environ.setdefault(key, tokens[0])
 
 
+def ensure_named_video_immutable(client, bucket, data, checksum):
+    if data['id'] not in CONFIG.get('videoNames', {}):
+        return
+    try:
+        existing = client.head_object(Bucket=bucket, Key=data['objectKey'])
+    except Exception as error:
+        if getattr(error, 'response', {}).get('Error', {}).get('Code') not in {'404', 'NoSuchKey', 'NotFound'}:
+            raise
+    else:
+        if existing.get('Metadata', {}).get('source-sha256') != checksum:
+            raise ValueError('That video name already contains other or unverified content; increment its version in videoNames')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--execute', action='store_true', help='Upload; default is a local plan only')
@@ -47,7 +60,7 @@ def main():
         if source is None:
             continue
         checksum = digest(source)
-        if data['objectKey'] != f"videos/{data['id']}/{checksum[:16]}.mp4":
+        if data['objectKey'] != video_object_key(data['id'], checksum) or (data.get('sourceSha256') and data['sourceSha256'] != checksum):
             parser.error('Source changed: run python3 scripts/process.py process first')
         jobs.append((source, meta_file, data, checksum))
         print(f"{source.name} → s3://{CONFIG['r2Bucket']}/{data['objectKey']}", flush=True)
@@ -72,6 +85,8 @@ def main():
     # Verify credentials/bucket before spending time transcoding.
     client.head_bucket(Bucket=bucket)
     for source, meta_file, data, checksum in jobs:
+        # Readable, versioned names are immutable: never replace different content.
+        ensure_named_video_immutable(client, bucket, data, checksum)
         media = ROOT / '.cache/media' / (checksum + '.mp4')
         media.parent.mkdir(parents=True, exist_ok=True)
         if not media.exists():
@@ -87,8 +102,10 @@ def main():
         for path, key, mime in [(media, data['objectKey'], 'video/mp4'),
                                (meta_file.parent / 'poster.jpg', data['objectKey'][:-4] + '-poster.jpg', 'image/jpeg')]:
             client.upload_file(str(path), bucket, key, ExtraArgs={'ContentType': mime,
+                'Metadata': {'source-sha256': checksum},
                 'CacheControl': 'public, max-age=31536000, immutable' if CONFIG['visibility'] == 'public' else 'private, no-store'})
         data['status'] = 'uploaded'
+        data['sourceSha256'] = checksum
         if CONFIG['visibility'] == 'public':
             data['url'] = base + '/' + quote(data['objectKey'], safe='/')
         else:

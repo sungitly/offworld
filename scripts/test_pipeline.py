@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 import process
 import upload_videos
 from gallery import render_homepage
@@ -121,6 +121,57 @@ class PipelineTests(unittest.TestCase):
         output = (self.root / 'index.html').read_text()
         self.assertNotIn('data-video', output)
         self.assertIn('待上传', output)
+
+    def test_video_domain_refresh_preserves_upload_but_changed_source_does_not(self):
+        source = self.root / 'sources/original.mp4'
+        source.write_bytes(b'original video')
+        ident = process.slug(source)
+        process.CONFIG.update(mediaBaseUrl='https://media.sunlei.page', videoNames={ident: 'ai-intro-astra-v1'})
+        meta = self.root / 'videos' / ident / 'metadata.json'
+        process.write_json(meta, {'id': ident, 'objectKey': 'videos/ai-intro-astra-v1.mp4',
+            'sourceSha256': process.digest(source), 'status': 'uploaded', 'url': 'https://old.r2.dev/old.mp4'})
+        probe = json.dumps({'streams': [{'codec_type': 'video', 'width': 1920, 'height': 1080}], 'format': {'duration': '86'}})
+        with patch.object(process, 'run', return_value=probe):
+            process.video(source)
+            unchanged = json.loads(meta.read_text())
+            self.assertEqual(unchanged['status'], 'uploaded')
+            self.assertEqual(unchanged['url'], 'https://media.sunlei.page/videos/ai-intro-astra-v1.mp4')
+            source.write_bytes(b'new video content')
+            process.video(source)
+            changed = json.loads(meta.read_text())
+            self.assertEqual(changed['status'], 'pending-upload')
+            self.assertNotIn('url', changed)
+
+
+class VideoNameTests(unittest.TestCase):
+    def test_readable_name_and_legacy_compatibility(self):
+        with patch.object(process, 'CONFIG', {'videoNames': {'example': 'ai-intro-astra-v1'}}):
+            self.assertEqual(process.video_object_key('example', 'abcdef' * 11), 'videos/ai-intro-astra-v1.mp4')
+            self.assertEqual(process.video_object_key('legacy', '0123456789abcdef'), 'videos/legacy/0123456789abcdef.mp4')
+
+    def test_duplicate_or_unsafe_names_are_rejected(self):
+        for names in [{'one': 'same', 'two': 'same'}, {'one': '../secret'}, {'one': 'a name'}, {'one': ''}]:
+            with self.subTest(names=names), patch.object(process, 'CONFIG', {'videoNames': names}), self.assertRaises(ValueError):
+                process.video_object_key('one', 'abc')
+
+    def test_existing_named_object_cannot_be_replaced_by_other_content(self):
+        client = Mock()
+        data = {'id': 'example', 'objectKey': 'videos/ai-intro-astra-v1.mp4'}
+        with patch.object(upload_videos, 'CONFIG', {'videoNames': {'example': 'ai-intro-astra-v1'}}):
+            for metadata in [{}, {'source-sha256': 'other-content'}]:
+                client.head_object.return_value = {'Metadata': metadata}
+                with self.assertRaisesRegex(ValueError, 'increment its version'):
+                    upload_videos.ensure_named_video_immutable(client, 'offworld', data, 'current-content')
+            client.head_object.return_value = {'Metadata': {'source-sha256': 'current-content'}}
+            upload_videos.ensure_named_video_immutable(client, 'offworld', data, 'current-content')
+
+    def test_lookup_failures_do_not_allow_an_overwrite(self):
+        client = Mock()
+        data = {'id': 'example', 'objectKey': 'videos/example-v1.mp4'}
+        with patch.object(upload_videos, 'CONFIG', {'videoNames': {'example': 'example-v1'}}):
+            client.head_object.side_effect = RuntimeError('network failure')
+            with self.assertRaisesRegex(RuntimeError, 'network failure'):
+                upload_videos.ensure_named_video_immutable(client, 'offworld', data, 'checksum')
 
 
 class UploadEnvTests(unittest.TestCase):

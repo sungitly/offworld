@@ -4,5 +4,9 @@
   "imageWidth": 1920,
   "jpegQuality": 90,
   "r2Bucket": "offworld",
-  "mediaBaseUrl": "https://pub-e37f36c2fbe94523ae1afaebeaa70d3a.r2.dev"
+  "mediaBaseUrl": "https://media.sunlei.page",
+  "videoNames": {
+    "slide1-ai坐标系-视频开场-v11-astra-66988801": "ai-intro-astra-v1",
+    "slide1-ai坐标系-视频开场-v11-claude-43a6dccb": "ai-intro-claude-v1"
+  }
 }
