@@ -10,7 +10,7 @@ python3 scripts/process.py build
 python3 -m http.server 8000 --bind 127.0.0.1 --directory dist
 ```
 
-打开 `http://localhost:8000/` 浏览首页，可按类型筛选、进入 slides 或在页内播放 R2 视频。也可直接打开 `artifacts.json` 中的 `path`。播放器支持方向键、空格、Home/End、页码输入、手机左右滑动；`#3` 可直达第三页。
+打开 `http://localhost:8000/` 浏览首页，可按类型筛选、进入 slides 或在页内播放 R2 视频。也可直接打开 `artifacts.json` 中的 `path`。播放器支持方向键、空格、Home/End、页码输入、手机左右滑动；`#3` 可直达第三页。底部提供返回首页，以及可暂停的自动播放：默认每 4 秒翻页，可选择 3、4、5 秒；手动翻页、输入页码或切换标签页会暂停，末页停止，支持重新播放。
 
 - `sources/`：原件，整个目录被 Git 忽略，不会进入构建产物。
 - `htmls/<作品>/`：自包含 HTML 或整套静态页面资源。
@@ -104,3 +104,5 @@ Cloudflare 的 Git 集成负责部署身份授权，不能用本机 R2 的对象
 旧 `r2.dev` 入口目前保留以兼容旧链接；确认不再需要后可在 R2 控制台关闭。不要把 R2 API 凭证填进 Cloudflare 构建环境。
 
 部署参考：[Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)、[Wrangler 配置](https://developers.cloudflare.com/workers/wrangler/configuration/)、[自定义域名](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)。
+
+FDE 演示的字体通过 `artifact.config.json` 中的 `slideFonts` 统一为中文 `PingFang SC`、英文和数字 `Arial`。只修改转换临时副本，原始 PPTX 不变。字体策略进入图片缓存指纹；播放器模板变更只刷新 HTML，不重复渲染图片。

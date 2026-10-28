@@ -5,6 +5,9 @@
   "jpegQuality": 90,
   "r2Bucket": "offworld",
   "mediaBaseUrl": "https://media.sunlei.page",
+  "slideFonts": {
+    "fde-用ai把业务重新做一遍-64aeb802": {"latin": "Arial", "eastAsian": "PingFang SC"}
+  },
   "videoNames": {
     "slide1-ai坐标系-视频开场-v11-astra-66988801": "ai-intro-astra-v1",
     "slide1-ai坐标系-视频开场-v11-claude-43a6dccb": "ai-intro-claude-v1"

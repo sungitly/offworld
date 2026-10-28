@@ -2,58 +2,99 @@
 <html lang="zh-CN">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 <title>WineTalk_From_Sweetness_to_Time_V1</title>
 <style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#111;color:#eee}
+:root{color-scheme:dark;font-family:Arial,"PingFang SC","Microsoft YaHei",sans-serif;background:#111;color:#eee}
 *{box-sizing:border-box}body{margin:0}main{height:100dvh;display:grid;grid-template-rows:minmax(0,1fr) auto}
 .stage{display:flex;align-items:center;justify-content:center;min-height:0;padding:12px}
 img{display:block;max-width:100%;max-height:100%;object-fit:contain}
-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 20px;background:#1c1c1c;flex-wrap:wrap}
-h1{font-size:14px;font-weight:500;margin:0;overflow-wrap:anywhere}nav{display:flex;align-items:center;gap:8px}
-button,input{font:inherit;color:inherit;background:#303030;border:1px solid #666;border-radius:5px;min-height:44px}
-button{padding:8px 14px;cursor:pointer}button:disabled{opacity:.4;cursor:default}input{width:64px;text-align:center}
+footer{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 20px;background:#1c1c1c}
+.deck-info{display:flex;align-items:center;gap:16px;min-width:0}.home-link{color:#ddd;text-decoration:none;display:inline-flex;align-items:center;min-height:44px;white-space:nowrap;font-size:13px}.home-link:hover{color:#edb675}
+h1{font-size:13px;font-weight:400;margin:0;max-width:34ch;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;color:#bdbdbd}
+.controls,nav,.playback{display:flex;align-items:center;gap:8px}.controls{flex-wrap:wrap;justify-content:flex-end;flex-shrink:0}
+button,input,select{font:inherit;font-size:14px;color:inherit;background:#303030;border:1px solid #666;border-radius:5px;min-height:44px}
+button{padding:8px 14px;cursor:pointer;white-space:nowrap}button:disabled{opacity:.4;cursor:default}input{width:56px;text-align:center}select{padding:8px;cursor:pointer}#play{min-width:104px}#play[aria-pressed=true]{border-color:#edb675;color:#edb675}
+button:hover:not(:disabled),select:hover{background:#3c3c3c}button:active{transform:translateY(1px)}
 :focus-visible{outline:3px solid #85bdff;outline-offset:3px}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
-@media(max-width:600px){footer{padding:8px;gap:8px}h1{width:100%;font-size:12px}nav{width:100%;justify-content:center}.stage{padding:0}button{padding:8px 10px}}
-@media print{main{height:auto}.stage{display:none}footer{display:none}.print-slide{display:block;width:100%;page-break-after:always}}
-@media screen{.print-slide{display:none}}
+@media(max-width:1000px){footer{align-items:flex-start;flex-direction:column;gap:4px}.deck-info{width:100%}h1{max-width:none;flex:1}.controls{width:100%;justify-content:space-between}}
+@media(max-width:600px){footer{padding:8px 12px;gap:4px}.deck-info{gap:12px}h1{font-size:11px}.home-link{font-size:12px}.controls{justify-content:center;gap:8px}.stage{padding:0}button{padding:8px 12px}.playback{justify-content:center}.page-total{font-size:13px}nav{justify-content:center}}
+@media(prefers-reduced-motion:reduce){button:active{transform:none}}
 </style>
 <main>
  <div class="stage" aria-label="幻灯片"><img id="slide" src="images/001.jpg" alt="第 1 页"></div>
- <footer><h1>WineTalk_From_Sweetness_to_Time_V1</h1><nav aria-label="翻页">
-  <button id="prev" type="button" aria-label="上一页">←</button>
-  <label class="sr-only" for="page">跳转页码</label><input id="page" type="number" min="1" max="7" value="1">
-  <span aria-hidden="true">/ 7</span><span id="status" class="sr-only" aria-live="polite"></span>
-  <button id="next" type="button" aria-label="下一页">→</button><button id="full" type="button">全屏</button>
- </nav></footer>
+ <footer>
+  <div class="deck-info"><a class="home-link" href="/">← 返回首页</a><h1 title="WineTalk_From_Sweetness_to_Time_V1">WineTalk_From_Sweetness_to_Time_V1</h1></div>
+  <div class="controls">
+   <nav aria-label="翻页">
+    <button id="prev" type="button" aria-label="上一页">←</button>
+    <label class="sr-only" for="page">跳转页码</label><input id="page" type="number" min="1" max="7" value="1">
+    <span class="page-total" aria-hidden="true">/ 7</span>
+    <button id="next" type="button" aria-label="下一页">→</button><button id="full" type="button">全屏</button>
+   </nav>
+   <div class="playback" role="group" aria-label="自动播放设置">
+    <button id="play" type="button" aria-pressed="false" title="点击开始自动翻页；手动翻页或切换标签页会暂停">自动播放</button>
+    <label class="sr-only" for="interval">自动播放间隔</label><select id="interval"><option value="3">每 3 秒</option><option value="4" selected>每 4 秒</option><option value="5">每 5 秒</option></select>
+   </div>
+  </div>
+  <span id="status" class="sr-only" role="status" aria-live="polite"></span>
+ </footer>
 </main>
 <noscript><p>启用 JavaScript 后可翻页。以下为所有页面：</p><img src="images/001.jpg" alt="第 1 页" style="width:100%"><img src="images/002.jpg" alt="第 2 页" style="width:100%"><img src="images/003.jpg" alt="第 3 页" style="width:100%"><img src="images/004.jpg" alt="第 4 页" style="width:100%"><img src="images/005.jpg" alt="第 5 页" style="width:100%"><img src="images/006.jpg" alt="第 6 页" style="width:100%"><img src="images/007.jpg" alt="第 7 页" style="width:100%"></noscript>
 <script>
 const count=7, image=document.querySelector('#slide'), input=document.querySelector('#page');
-let current=1;
+const play=document.querySelector('#play'), interval=document.querySelector('#interval'), status=document.querySelector('#status');
+let current=1, playing=false, timer;
+function pause(message=''){
+ clearTimeout(timer);playing=false;play.setAttribute('aria-pressed','false');
+ play.textContent=current===count?'重新播放':'自动播放';
+ if(message)status.textContent=message;
+}
+function schedule(){
+ clearTimeout(timer);
+ if(!playing||document.hidden)return;
+ if(current===count){pause('已播放到最后一页。');return;}
+ if(image.complete&&image.naturalWidth>0)timer=setTimeout(()=>show(current+1),Number(interval.value)*1000);
+}
 function show(n,updateHash=true){
  current=Math.min(count,Math.max(1,Number.isFinite(n)?Math.trunc(n):1));
  image.src=`images/${String(current).padStart(3,'0')}.jpg`;image.alt=`第 ${current} 页，共 ${count} 页`;
  input.value=current;document.querySelector('#prev').disabled=current===1;document.querySelector('#next').disabled=current===count;
- document.querySelector('#status').textContent=image.alt;
+ status.textContent=image.alt;play.disabled=count<2;
  if(updateHash)history.replaceState(null,'',`#${current}`);
  if(current<count){const preload=new Image();preload.src=`images/${String(current+1).padStart(3,'0')}.jpg`}
+ if(playing)schedule();else play.textContent=current===count?'重新播放':'自动播放';
 }
-document.querySelector('#prev').onclick=()=>show(current-1);
-document.querySelector('#next').onclick=()=>show(current+1);
-input.onchange=()=>show(Number(input.value));
+function navigate(n){pause();show(n);}
+function togglePlay(){
+ if(playing){pause('自动播放已暂停。');return;}
+ if(current===count)show(1);
+ playing=true;play.setAttribute('aria-pressed','true');play.textContent='暂停播放';
+ status.textContent=`自动播放，每 ${interval.value} 秒翻页。`;schedule();
+}
+play.onclick=togglePlay;
+interval.onchange=()=>{if(playing){status.textContent=`自动播放，每 ${interval.value} 秒翻页。`;schedule();}};
+image.addEventListener('load',schedule);
+image.addEventListener('error',()=>pause('当前页面加载失败，请检查网络或手动翻页。'));
+document.querySelector('#prev').onclick=()=>navigate(current-1);
+document.querySelector('#next').onclick=()=>navigate(current+1);
+input.onfocus=()=>pause();input.onchange=()=>navigate(Number(input.value));
+document.querySelector('.home-link').onclick=()=>pause();
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&playing)pause('切换标签页后，自动播放已暂停。');});
 document.addEventListener('keydown',e=>{
- if(e.target.closest('input,textarea,select,button')||e.ctrlKey||e.metaKey||e.altKey)return;
+ if(e.key==='Escape'&&playing){pause('自动播放已暂停。');return;}
+ if(e.target.closest('input,textarea,select,button,a')||e.ctrlKey||e.metaKey||e.altKey)return;
  const actions={ArrowRight:current+1,ArrowDown:current+1,PageDown:current+1,' ':current+1,ArrowLeft:current-1,ArrowUp:current-1,PageUp:current-1,Home:1,End:count};
- if(e.key in actions){e.preventDefault();show(actions[e.key])}
+ if(e.key in actions){e.preventDefault();navigate(actions[e.key]);}
 });
 const full=document.querySelector('#full');
 if(!document.fullscreenEnabled)full.hidden=true;
-full.onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{document.querySelector('#status').textContent='浏览器未允许全屏'}};
+full.onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{status.textContent='浏览器未允许全屏';}};
 document.addEventListener('fullscreenchange',()=>full.textContent=document.fullscreenElement?'退出全屏':'全屏');
-let startX=0,startY=0;
-image.addEventListener('touchstart',e=>{if(e.touches.length===1){startX=e.touches[0].clientX;startY=e.touches[0].clientY}},{passive:true});
-image.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*2)show(current+(dx<0?1:-1))},{passive:true});
-addEventListener('hashchange',()=>show(Number(location.hash.slice(1)),false));
+let startX=0,startY=0,touchStarted=false;
+image.addEventListener('touchstart',e=>{touchStarted=e.touches.length===1;if(touchStarted){startX=e.touches[0].clientX;startY=e.touches[0].clientY;}},{passive:true});
+image.addEventListener('touchend',e=>{if(!touchStarted||!e.changedTouches.length)return;touchStarted=false;const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;if(Math.abs(dx)>60&&Math.abs(dx)>Math.abs(dy)*2)navigate(current+(dx<0?1:-1));},{passive:true});
+addEventListener('hashchange',()=>{pause();show(Number(location.hash.slice(1)),false);});
 show(Number(location.hash.slice(1))||1,false);
 </script>
 </html>

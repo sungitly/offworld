@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import html
+import io
 import json
 import os
 from pathlib import Path
@@ -13,13 +14,14 @@ import sys
 import tempfile
 import unicodedata
 import zipfile
+from xml.etree import ElementTree as ET
 from gallery import render_homepage
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = json.loads((ROOT / 'artifact.config.json').read_text())
 TEMPLATE = (ROOT / 'scripts/templates/slides.html').read_text()
-VERSION = '2'
+VERSION = '4'
 
 
 def run(args, env=None):
@@ -95,15 +97,49 @@ def replace_dir(staged, destination):
         shutil.rmtree(backup)
 
 
+def prepare_slide_fonts(source, destination, fonts):
+    """Normalize fonts in a temporary PPTX; never change the original archive."""
+    drawing = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+    with zipfile.ZipFile(source) as original, zipfile.ZipFile(destination, 'w') as output:
+        for entry in original.infolist():
+            data = original.read(entry.filename)
+            if entry.filename.startswith(('ppt/slides/', 'ppt/slideMasters/', 'ppt/slideLayouts/', 'ppt/theme/')) and entry.filename.endswith('.xml'):
+                # Preserve original namespace prefixes and declarations. Reserializing
+                # OOXML can invalidate mc:Choice Requires="a14" and drop entire shapes.
+                prefixes = {prefix for _, (prefix, uri) in ET.iterparse(io.BytesIO(data), events=['start-ns']) if uri == drawing}
+                if prefixes:
+                    qualified = b'|'.join(re.escape((prefix + ':' if prefix else '').encode()) for prefix in prefixes)
+                    pattern = rb'<(?:' + qualified + rb')(latin|ea|font)\b[^<>]*>'
+                    def replace_font(match):
+                        tag, kind = match[0], match[1]
+                        family = fonts.get('latin') if kind == b'latin' else fonts.get('eastAsian')
+                        if kind == b'font' and not re.search(rb'\bscript=["\'](?:Hans|Hant)["\']', tag):
+                            return tag
+                        if not family:
+                            return tag
+                        return re.sub(rb'(\btypeface\s*=\s*)(["\'])(.*?)\2',
+                            lambda attribute: attribute[1] + attribute[2] + html.escape(family, quote=True).encode() + attribute[2], tag)
+                    data = re.sub(pattern, replace_font, data)
+            output.writestr(entry, data)
+
+
+def write_slide_viewer(destination, title, count):
+    fallback = ''.join(f'<img src="images/{i:03}.jpg" alt="第 {i} 页" style="width:100%">' for i in range(1, count + 1))
+    viewer = TEMPLATE.replace('__COUNT__', str(count)).replace('__NOSCRIPT__', fallback).replace('__TITLE__', html.escape(title))
+    (destination / 'index.html').write_text(viewer)
+
+
 def slides(source, force):
     ident = slug(source)
     target = ROOT / 'slides' / ident
-    fingerprint = hashlib.sha256((digest(source) + VERSION + TEMPLATE +
+    fonts = CONFIG.get('slideFonts', {}).get(ident, {})
+    fingerprint = hashlib.sha256((digest(source) + VERSION + json.dumps(fonts, sort_keys=True) +
         str(CONFIG['imageWidth']) + str(CONFIG['jpegQuality'])).encode()).hexdigest()
     marker = ROOT / '.cache' / f'{ident}.json'
     if not force and marker.exists() and json.loads(marker.read_text()).get('fingerprint') == fingerprint:
         meta = json.loads((target / 'metadata.json').read_text()) if (target / 'metadata.json').exists() else None
         if meta and (target / 'index.html').exists() and all((target / 'images' / f'{i:03}.jpg').exists() for i in range(1, meta['pages'] + 1)):
+            write_slide_viewer(target, source.stem, meta['pages'])
             print(f'Unchanged: {source.name}', flush=True)
             return
     with zipfile.ZipFile(source) as archive:
@@ -112,8 +148,12 @@ def slides(source, force):
     cache.mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(dir=cache) as temp:
         work = Path(temp)
+        render_source = source
+        if fonts:
+            render_source = work / source.name
+            prepare_slide_fonts(source, render_source, fonts)
         run([os.environ.get('SOFFICE', 'soffice'), '-env:UserInstallation=' + (work / 'profile').as_uri(),
-             '--headless', '--convert-to', 'pdf:impress_pdf_Export:{"ExportHiddenSlides":{"type":"boolean","value":"true"}}', '--outdir', work, source], env=render_environment())
+             '--headless', '--convert-to', 'pdf:impress_pdf_Export:{"ExportHiddenSlides":{"type":"boolean","value":"true"}}', '--outdir', work, render_source], env=render_environment())
         pdf = work / (source.stem + '.pdf')
         if not pdf.exists():
             raise RuntimeError(f'No PDF produced for {source.name}')
@@ -129,9 +169,7 @@ def slides(source, force):
             raise RuntimeError('Image count mismatch')
         for i, image in enumerate(pages, 1):
             image.rename(images / f'{i:03}.jpg')
-        fallback = ''.join(f'<img src="images/{i:03}.jpg" alt="第 {i} 页" style="width:100%">' for i in range(1, expected + 1))
-        viewer = TEMPLATE.replace('__COUNT__', str(expected)).replace('__NOSCRIPT__', fallback).replace('__TITLE__', html.escape(source.stem))
-        (staged / 'index.html').write_text(viewer)
+        write_slide_viewer(staged, source.stem, expected)
         write_json(staged / 'metadata.json', {'id': ident, 'type': 'slides', 'title': source.stem,
             'path': f'slides/{ident}/index.html', 'cover': f'slides/{ident}/images/001.jpg', 'pages': expected})
         target.parent.mkdir(exist_ok=True)

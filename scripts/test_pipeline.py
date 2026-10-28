@@ -4,10 +4,37 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+import zipfile
+from xml.etree import ElementTree as ET
 from unittest.mock import patch, Mock
 import process
 import upload_videos
 from gallery import render_homepage
+
+
+class SlideFontTests(unittest.TestCase):
+    def test_font_normalization_preserves_original_and_other_slide_content(self):
+        ns = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+        xml = f'<root xmlns:a="{ns}" xmlns:a14="urn:example:drawing2010" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"><a:rPr sz="4200" b="1"><a:latin typeface="Georgia"/><a:ea typeface="Lantinghei SC Demibold"/></a:rPr><a:t>用 AI 把业务重新做一遍</a:t><a:font script="Hans" typeface="Missing Font"/><mc:AlternateContent><mc:Choice Requires="a14"><a:t>Original shapes</a:t></mc:Choice></mc:AlternateContent></root>'.encode()
+        with tempfile.TemporaryDirectory() as temp:
+            source, converted = Path(temp) / 'source.pptx', Path(temp) / 'render.pptx'
+            with zipfile.ZipFile(source, 'w') as archive:
+                archive.writestr('ppt/slides/slide1.xml', xml)
+                archive.writestr('ppt/media/image1.png', b'original-image-content')
+            original = source.read_bytes()
+            process.prepare_slide_fonts(source, converted, {'latin': 'Arial', 'eastAsian': 'PingFang SC'})
+            self.assertEqual(source.read_bytes(), original)
+            with zipfile.ZipFile(converted) as archive:
+                self.assertEqual(archive.read('ppt/media/image1.png'), b'original-image-content')
+                output_xml = archive.read('ppt/slides/slide1.xml')
+                self.assertIn(b'xmlns:a14="urn:example:drawing2010"', output_xml)
+                self.assertIn(b'<mc:Choice Requires="a14">', output_xml)
+                tree = ET.fromstring(archive.read('ppt/slides/slide1.xml'))
+                self.assertEqual(tree.find(f'{{{ns}}}rPr').attrib, {'sz': '4200', 'b': '1'})
+                self.assertEqual(tree.find(f'.//{{{ns}}}latin').get('typeface'), 'Arial')
+                self.assertEqual(tree.find(f'.//{{{ns}}}ea').get('typeface'), 'PingFang SC')
+                self.assertEqual(tree.find(f'.//{{{ns}}}font').get('typeface'), 'PingFang SC')
+                self.assertEqual(tree.find(f'.//{{{ns}}}t').text, '用 AI 把业务重新做一遍')
 
 
 class PipelineTests(unittest.TestCase):
